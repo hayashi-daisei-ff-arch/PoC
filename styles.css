@@ -21,6 +21,7 @@
 body {
   min-width: 320px;
   margin: 0;
+  overflow-x: hidden;
   background: var(--bg);
   color: var(--ink);
   font-family:
@@ -109,7 +110,7 @@ h2 {
 
 .sim-grid {
   display: grid;
-  grid-template-columns: minmax(340px, 0.95fr) minmax(420px, 1.05fr);
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
   gap: 18px;
   padding: 18px clamp(16px, 4vw, 42px) 28px;
 }
@@ -117,6 +118,7 @@ h2 {
 .patient-panel,
 .conversation-panel,
 .feedback-panel {
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -414,8 +416,31 @@ button:focus-visible {
   align-items: center;
   min-width: 0;
   padding: 12px 14px;
+  overflow-wrap: anywhere;
   font-weight: 700;
   line-height: 1.45;
+}
+
+.summary-card {
+  display: grid;
+  gap: 12px;
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  padding: 16px;
+  background: #f7f5ef;
+}
+
+.summary-card strong {
+  color: var(--teal-dark);
+  font-size: 1rem;
+}
+
+.summary-card span {
+  line-height: 1.65;
+}
+
+.summary-reset {
+  justify-self: start;
 }
 
 .transcript-list {

@@ -1,12 +1,10 @@
 const FALLBACK_CSV = `scene_id,scene_title,patient_state,prompt,choice_id,choice_text,response_label,next_scene,feedback,score_delta
-opening,Opening,初診受付後・緊張あり,導入の声かけを選択してください,1,選択肢①,選択肢①に対する画像や動画などの表示,assessment,ここに選択肢①に対するフィードバック,1
-opening,Opening,初診受付後・緊張あり,導入の声かけを選択してください,2,選択肢②,選択肢②に対する画像や動画などの表示,assessment,ここに選択肢②に対するフィードバック,0
-assessment,Assessment,少し話し始めている,リスク評価につながる問いかけを選択してください,1,選択肢①,選択肢①に対する画像や動画などの表示,support,ここに選択肢①に対するフィードバック,1
-assessment,Assessment,少し話し始めている,リスク評価につながる問いかけを選択してください,2,選択肢②,選択肢②に対する画像や動画などの表示,support,ここに選択肢②に対するフィードバック,-1
-support,Support,支援の選択肢を検討中,次の支援につながる応答を選択してください,1,選択肢①,選択肢①に対する画像や動画などの表示,closing,ここに選択肢①に対するフィードバック,1
-support,Support,支援の選択肢を検討中,次の支援につながる応答を選択してください,2,選択肢②,選択肢②に対する画像や動画などの表示,closing,ここに選択肢②に対するフィードバック,0
-closing,Closing,会話終了前,終了前の確認を選択してください,1,選択肢①,選択肢①に対する画像や動画などの表示,complete,ここに選択肢①に対するフィードバック,1
-closing,Closing,会話終了前,終了前の確認を選択してください,2,選択肢②,選択肢②に対する画像や動画などの表示,complete,ここに選択肢②に対するフィードバック,0`;
+opening,Opening,初診受付後・緊張あり,最初の声かけを選択してください,1,選択肢①,選択肢①に対する画像や動画などの表示,route_1,ここに選択肢①に対するフィードバック,1
+opening,Opening,初診受付後・緊張あり,最初の声かけを選択してください,2,選択肢②,選択肢②に対する画像や動画などの表示,route_2,ここに選択肢②に対するフィードバック,0
+route_1,Route 1,選択肢①を受けた反応,選択肢①の後に出る分岐です,1-1,選択肢①-1,選択肢①-1に対する画像や動画などの表示,complete,ここに選択肢①-1に対するフィードバック,1
+route_1,Route 1,選択肢①を受けた反応,選択肢①の後に出る分岐です,1-2,選択肢①-2,選択肢①-2に対する画像や動画などの表示,complete,ここに選択肢①-2に対するフィードバック,0
+route_2,Route 2,選択肢②を受けた反応,選択肢②の後に出る分岐です,2-1,選択肢②-1,選択肢②-1に対する画像や動画などの表示,complete,ここに選択肢②-1に対するフィードバック,1
+route_2,Route 2,選択肢②を受けた反応,選択肢②の後に出る分岐です,2-2,選択肢②-2,選択肢②-2に対する画像や動画などの表示,complete,ここに選択肢②-2に対するフィードバック,-1`;
 
 const state = {
   rows: [],
@@ -125,6 +123,16 @@ function restoreSession() {
   }
 }
 
+function normalizeSession() {
+  const canResume = state.sceneId === "complete" || state.rows.some((row) => row.scene_id === state.sceneId);
+  if (canResume) return;
+  state.sceneId = "opening";
+  state.transcript = [];
+  state.feedback = [];
+  state.score = 0;
+  el.notesInput.value = "";
+}
+
 function render() {
   renderScene();
   renderFeedback();
@@ -137,15 +145,17 @@ function renderScene() {
 
   if (!scene) {
     el.sceneBadge.textContent = "Done";
-    el.patientState.textContent = "終了";
+    el.patientState.textContent = "会話終了";
     el.sceneTitle.textContent = "Complete";
-    el.scenePrompt.textContent = "最終フィードバック";
+    el.scenePrompt.textContent = "終了後フィードバック";
     el.choiceList.innerHTML = `
-      <div class="feedback-item">
+      <div class="summary-card">
         <strong>総合フィードバック</strong>
-        <span>ここに総合フィードバックを表示</span>
+        <span>${escapeHtml(buildSummaryFeedback())}</span>
+        <button class="ghost-button summary-reset" type="button">もう一度実施</button>
       </div>
     `;
+    document.querySelector(".summary-reset")?.addEventListener("click", resetSession);
     return;
   }
 
@@ -192,6 +202,14 @@ function renderFeedback() {
       `,
     )
     .join("");
+}
+
+function buildSummaryFeedback() {
+  const learnerChoices = state.transcript
+    .filter((item) => item.speaker === "learner")
+    .map((item) => item.text);
+  const route = learnerChoices.length > 0 ? learnerChoices.join(" → ") : "未選択";
+  return `ここに総合フィードバックを表示します。選択ルート: ${route}。合計スコア: ${state.score}`;
 }
 
 function renderTranscript() {
@@ -329,5 +347,6 @@ el.tabButtons.forEach((button) => {
 
 loadScenario().then(() => {
   restoreSession();
+  normalizeSession();
   render();
 });
