@@ -3,100 +3,1639 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta
-      name="description"
-      content="選択肢式バーチャル患者シミュレーションのGitHub Pages向けミニPoC"
-    >
-    <title>Virtual Patient Mini PoC</title>
-    <link rel="stylesheet" href="styles.css">
+    <meta name="description" content="大学実習向けの自己完結型ランダムグループ分けツール">
+    <title>実習グループ分けツール</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f7f4;
+        --surface: #ffffff;
+        --surface-strong: #eef3ef;
+        --ink: #1e2526;
+        --muted: #667277;
+        --line: #dbe3dd;
+        --brand: #11766f;
+        --brand-dark: #0a4e4b;
+        --brand-soft: #dff3ef;
+        --blue: #2f5d8c;
+        --amber: #e9ad34;
+        --danger: #b42318;
+        --danger-soft: #fee4e2;
+        --ok: #257a4f;
+        --shadow: 0 16px 38px rgba(33, 45, 42, 0.1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-width: 320px;
+        background: var(--bg);
+      }
+
+      body {
+        min-width: 320px;
+        margin: 0;
+        overflow-x: hidden;
+        background:
+          linear-gradient(180deg, #e7f0ed 0, rgba(231, 240, 237, 0) 220px),
+          var(--bg);
+        color: var(--ink);
+        font-family:
+          "Yu Gothic UI",
+          "Hiragino Kaku Gothic ProN",
+          Meiryo,
+          system-ui,
+          sans-serif;
+      }
+
+      button,
+      select {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+
+      button:disabled {
+        cursor: default;
+        opacity: 0.58;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      .app {
+        width: min(1120px, 100%);
+        margin: 0 auto;
+        padding: 12px 12px 28px;
+      }
+
+      .topbar {
+        display: grid;
+        gap: 10px;
+        padding: 14px 4px 12px;
+      }
+
+      .eyebrow {
+        margin: 0 0 5px;
+        color: var(--brand-dark);
+        font-size: 0.75rem;
+        font-weight: 800;
+      }
+
+      h1 {
+        margin-bottom: 0;
+        font-size: 1.45rem;
+        line-height: 1.25;
+        letter-spacing: 0;
+      }
+
+      .summary-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+      }
+
+      .summary-chip {
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 9px;
+        background: rgba(255, 255, 255, 0.8);
+      }
+
+      .summary-chip span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 800;
+      }
+
+      .summary-chip strong {
+        display: block;
+        margin-top: 2px;
+        color: var(--ink);
+        font-size: 0.95rem;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 390px) minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+      }
+
+      .panel {
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 12px 8px;
+      }
+
+      .panel-header h2 {
+        margin-bottom: 0;
+        font-size: 1rem;
+      }
+
+      .panel-body {
+        display: grid;
+        gap: 12px;
+        padding: 0 12px 12px;
+      }
+
+      .setting-block {
+        display: grid;
+        gap: 7px;
+      }
+
+      .field-title {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .segmented {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        gap: 6px;
+      }
+
+      .mode-segmented {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-flow: initial;
+      }
+
+      .seg-button,
+      .action-button,
+      .delete-button {
+        min-width: 0;
+        min-height: 46px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface-strong);
+        color: var(--ink);
+        font-weight: 800;
+      }
+
+      .seg-button {
+        padding: 0 8px;
+      }
+
+      .seg-button.is-active {
+        border-color: var(--brand);
+        background: var(--brand);
+        color: #fff;
+      }
+
+      .select-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .student-select {
+        width: 100%;
+        min-width: 0;
+        min-height: 46px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0 10px;
+        background: #fff;
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      .relation-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .action-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .action-button {
+        border-color: var(--brand);
+        background: var(--brand);
+        color: #fff;
+        padding: 0 10px;
+      }
+
+      .action-button.secondary {
+        border-color: var(--blue);
+        background: #fff;
+        color: var(--blue);
+      }
+
+      .add-button {
+        width: 100%;
+      }
+
+      button:focus-visible,
+      select:focus-visible {
+        outline: 3px solid rgba(17, 118, 111, 0.24);
+        outline-offset: 2px;
+      }
+
+      .notice {
+        display: none;
+        border-radius: 8px;
+        padding: 10px 11px;
+        font-size: 0.86rem;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+
+      .notice.is-visible {
+        display: block;
+      }
+
+      .notice.info {
+        border: 1px solid #bdd7e8;
+        background: #e8f3fa;
+        color: #234b6b;
+      }
+
+      .notice.success {
+        border: 1px solid #b7ddc8;
+        background: #e7f6ed;
+        color: var(--ok);
+      }
+
+      .notice.error {
+        border: 1px solid #f2aaa4;
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
+
+      .constraint-count {
+        display: inline-grid;
+        place-items: center;
+        min-width: 32px;
+        min-height: 28px;
+        border-radius: 8px;
+        background: var(--brand-soft);
+        color: var(--brand-dark);
+        font-size: 0.86rem;
+        font-weight: 900;
+      }
+
+      .constraint-list {
+        display: grid;
+        gap: 7px;
+        max-height: 238px;
+        overflow: auto;
+        padding-right: 2px;
+      }
+
+      .constraint-item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px;
+        background: #fbfcfb;
+      }
+
+      .constraint-item.is-error {
+        border-color: var(--danger);
+        background: var(--danger-soft);
+      }
+
+      .constraint-main {
+        min-width: 0;
+      }
+
+      .constraint-pair {
+        display: block;
+        overflow-wrap: anywhere;
+        font-size: 0.9rem;
+        font-weight: 900;
+      }
+
+      .constraint-type {
+        display: inline-block;
+        margin-bottom: 4px;
+        border-radius: 7px;
+        padding: 3px 7px;
+        background: #edf2f7;
+        color: #29435c;
+        font-size: 0.72rem;
+        font-weight: 900;
+      }
+
+      .constraint-type.same {
+        background: #e4f5e9;
+        color: #20613d;
+      }
+
+      .constraint-type.separate {
+        background: #fff3d7;
+        color: #7a4c05;
+      }
+
+      .delete-button {
+        min-height: 38px;
+        min-width: 52px;
+        border-color: #e7c7c3;
+        background: #fff;
+        color: var(--danger);
+        font-size: 0.82rem;
+      }
+
+      .results-panel {
+        overflow: hidden;
+      }
+
+      .result-header {
+        display: grid;
+        gap: 9px;
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.74);
+      }
+
+      .result-header-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .result-header h2 {
+        margin-bottom: 0;
+        font-size: 1.05rem;
+      }
+
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 7px;
+      }
+
+      .metric {
+        min-width: 0;
+        border-radius: 8px;
+        padding: 8px 9px;
+        background: var(--surface-strong);
+      }
+
+      .metric span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 900;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 2px;
+        font-size: 1rem;
+      }
+
+      .groups-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .group-card {
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        overflow: hidden;
+      }
+
+      .group-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        padding: 8px 9px;
+        background: #173b40;
+        color: #fff;
+      }
+
+      .group-title h3 {
+        margin-bottom: 0;
+        font-size: 0.95rem;
+      }
+
+      .group-average {
+        display: inline-grid;
+        place-items: center;
+        min-width: 54px;
+        min-height: 28px;
+        border-radius: 7px;
+        background: var(--amber);
+        color: #1f1908;
+        font-size: 0.8rem;
+        font-weight: 900;
+      }
+
+      .member-list {
+        display: grid;
+        gap: 2px;
+        padding: 7px 8px 8px;
+      }
+
+      .member {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        min-width: 0;
+        border-bottom: 1px solid #eef2ef;
+        padding: 4px 0;
+        font-size: 0.82rem;
+        line-height: 1.25;
+      }
+
+      .member:last-child {
+        border-bottom: 0;
+      }
+
+      .member-name {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        font-weight: 800;
+      }
+
+      .member-gpa {
+        flex: 0 0 auto;
+        color: var(--blue);
+        font-variant-numeric: tabular-nums;
+        font-weight: 900;
+      }
+
+      .empty-result {
+        display: grid;
+        place-items: center;
+        grid-column: 1 / -1;
+        min-height: 260px;
+        padding: 20px;
+        color: var(--muted);
+        text-align: center;
+        font-weight: 800;
+      }
+
+      .roster {
+        margin-top: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      .roster summary {
+        min-height: 44px;
+        padding: 12px;
+        color: var(--brand-dark);
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .roster-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 6px;
+        padding: 0 12px 12px;
+      }
+
+      .roster-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 6px;
+        border-radius: 7px;
+        padding: 7px 8px;
+        background: var(--surface-strong);
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+
+      .roster-item span:last-child {
+        color: var(--blue);
+        font-variant-numeric: tabular-nums;
+      }
+
+      @media (max-width: 820px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .settings-panel {
+          order: 1;
+          box-shadow: none;
+        }
+
+        .constraints-panel {
+          order: 2;
+        }
+
+        .results-panel {
+          order: 3;
+        }
+
+        .roster {
+          order: 4;
+        }
+
+        .constraint-list {
+          max-height: 188px;
+        }
+      }
+
+      @media (max-width: 430px) {
+        .app {
+          padding-inline: 8px;
+        }
+
+        h1 {
+          font-size: 1.28rem;
+        }
+
+        .summary-strip,
+        .metric-row {
+          gap: 5px;
+        }
+
+        .summary-chip,
+        .metric {
+          padding-inline: 7px;
+        }
+
+        .groups-grid {
+          gap: 7px;
+          padding: 8px;
+        }
+
+        .group-title {
+          padding-inline: 8px;
+        }
+
+        .member {
+          font-size: 0.78rem;
+        }
+
+        .roster-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="app" class="app-shell">
+    <div class="app">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Virtual Patient Simulation</p>
-          <h1>仮想患者シミュレーション PoC</h1>
+          <p class="eyebrow">Practice Group Mixer</p>
+          <h1>実習グループ分けツール</h1>
         </div>
-        <div class="top-actions" aria-label="操作">
-          <button id="exportLogButton" class="icon-text-button" type="button">ログCSV</button>
-          <button id="resetButton" class="ghost-button" type="button">最初から</button>
+        <div class="summary-strip" aria-label="サンプルデータ概要">
+          <div class="summary-chip">
+            <span>学生</span>
+            <strong>20名</strong>
+          </div>
+          <div class="summary-chip">
+            <span>班数</span>
+            <strong id="summaryGroupCount">4班</strong>
+          </div>
+          <div class="summary-chip">
+            <span>制約</span>
+            <strong id="summaryConstraintCount">3件</strong>
+          </div>
         </div>
       </header>
 
-      <main class="sim-grid">
-        <section class="patient-panel" aria-label="患者表示">
-          <div class="patient-stage">
-            <div class="patient-video" aria-label="仮想患者">
-              <div class="patient-portrait" aria-hidden="true">
-                <div class="portrait-hair"></div>
-                <div class="portrait-face"></div>
-                <div class="portrait-body"></div>
-              </div>
-              <div class="patient-room" aria-hidden="true">
-                <span></span>
-                <span></span>
-                <span></span>
+      <main class="layout">
+        <section class="panel settings-panel" aria-label="設定">
+          <div class="panel-header">
+            <h2>設定</h2>
+          </div>
+          <div class="panel-body">
+            <div class="setting-block">
+              <span class="field-title">班数</span>
+              <div class="segmented" id="groupCountButtons" aria-label="班数">
+                <button class="seg-button" type="button" data-group-count="2">2</button>
+                <button class="seg-button" type="button" data-group-count="3">3</button>
+                <button class="seg-button is-active" type="button" data-group-count="4">4</button>
+                <button class="seg-button" type="button" data-group-count="5">5</button>
+                <button class="seg-button" type="button" data-group-count="6">6</button>
               </div>
             </div>
-            <div class="patient-meta">
-              <span id="sceneBadge" class="scene-badge">Opening</span>
-              <div>
-                <p class="patient-name">Taye Banks 風ミニ症例</p>
-                <p id="patientState" class="patient-state">初期状態</p>
+
+            <div class="setting-block">
+              <span class="field-title">分け方</span>
+              <div class="segmented mode-segmented" id="modeButtons" aria-label="分け方">
+                <button class="seg-button" type="button" data-mode="random">完全ランダム</button>
+                <button class="seg-button is-active" type="button" data-mode="gpa">GPA均等化</button>
               </div>
+            </div>
+
+            <div class="action-row">
+              <button class="action-button" id="runButton" type="button">グループ分け実行</button>
+              <button class="action-button secondary" id="rerollButton" type="button">再抽選</button>
+            </div>
+
+            <div class="notice info is-visible" id="notice" role="status" aria-live="polite">
+              サンプルデータとプリセット制約を読み込みました。
             </div>
           </div>
-
-          <aside class="feedback-panel" aria-label="フィードバック">
-            <div class="panel-heading">
-              <h2>Feedback</h2>
-              <span id="scoreBadge" class="score-badge">0</span>
-            </div>
-            <div id="feedbackList" class="feedback-list"></div>
-          </aside>
         </section>
 
-        <section class="conversation-panel" aria-label="会話">
-          <nav class="tabs" aria-label="表示切替">
-            <button class="tab-button active" type="button" data-tab="talk">Talk</button>
-            <button class="tab-button" type="button" data-tab="transcript">Transcript</button>
-            <button class="tab-button" type="button" data-tab="notes">Notes</button>
-          </nav>
-
-          <div id="talkPanel" class="tab-panel active">
-            <label class="search-label" for="choiceSearch">Search</label>
-            <input id="choiceSearch" class="choice-search" type="search" placeholder="キーワード">
-            <div class="scene-header">
-              <h2 id="sceneTitle">Opening</h2>
-              <p id="scenePrompt">現在の場面</p>
+        <section class="panel results-panel" aria-label="結果">
+          <div class="result-header">
+            <div class="result-header-top">
+              <h2>結果</h2>
+              <span class="constraint-count" id="resultStatusBadge">待機</span>
             </div>
-            <div id="choiceList" class="choice-list"></div>
+            <div class="metric-row" aria-label="結果指標">
+              <div class="metric">
+                <span>方式</span>
+                <strong id="metricMode">GPA均等化</strong>
+              </div>
+              <div class="metric">
+                <span>班数</span>
+                <strong id="metricGroups">4</strong>
+              </div>
+              <div class="metric">
+                <span>最大差</span>
+                <strong id="metricDiff">--</strong>
+              </div>
+            </div>
           </div>
-
-          <div id="transcriptPanel" class="tab-panel">
-            <div id="transcriptList" class="transcript-list"></div>
-          </div>
-
-          <div id="notesPanel" class="tab-panel">
-            <textarea id="notesInput" class="notes-input" aria-label="メモ"></textarea>
+          <div id="groupsGrid" class="groups-grid">
+            <div class="empty-result">未実行</div>
           </div>
         </section>
+
+        <section class="panel constraints-panel" aria-label="制約">
+          <div class="panel-header">
+            <h2>制約</h2>
+            <span class="constraint-count" id="constraintCount">3</span>
+          </div>
+          <div class="panel-body">
+            <div class="setting-block">
+              <span class="field-title">学生</span>
+              <div class="select-row">
+                <select class="student-select" id="studentA" aria-label="学生1"></select>
+                <select class="student-select" id="studentB" aria-label="学生2"></select>
+              </div>
+            </div>
+
+            <div class="setting-block">
+              <span class="field-title">関係</span>
+              <div class="relation-row" id="relationButtons" aria-label="関係">
+                <button class="seg-button is-active" type="button" data-relation="same">同じ班にする</button>
+                <button class="seg-button" type="button" data-relation="separate">別の班にする</button>
+              </div>
+            </div>
+
+            <button class="action-button add-button" id="addConstraintButton" type="button">追加</button>
+            <div class="constraint-list" id="constraintList"></div>
+          </div>
+        </section>
+
+        <details class="roster">
+          <summary>学生GPA一覧</summary>
+          <div class="roster-grid" id="rosterGrid"></div>
+        </details>
       </main>
-
-      <div id="responseOverlay" class="response-overlay" aria-hidden="true">
-        <div class="response-window" role="dialog" aria-modal="true" aria-labelledby="responseTitle">
-          <div class="response-media">
-            <div class="media-pulse" aria-hidden="true"></div>
-            <p id="responseTitle">選択肢に対する画像や動画などの表示</p>
-          </div>
-          <div class="response-footer">
-            <span id="responseCaption">5秒間の想定表示</span>
-            <progress id="responseProgress" value="0" max="5"></progress>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+      const students = [
+        { id: "学生01", gpa: 3.48 },
+        { id: "学生02", gpa: 2.91 },
+        { id: "学生03", gpa: 3.76 },
+        { id: "学生04", gpa: 2.64 },
+        { id: "学生05", gpa: 3.11 },
+        { id: "学生06", gpa: 1.92 },
+        { id: "学生07", gpa: 3.33 },
+        { id: "学生08", gpa: 2.38 },
+        { id: "学生09", gpa: 3.89 },
+        { id: "学生10", gpa: 2.77 },
+        { id: "学生11", gpa: 1.85 },
+        { id: "学生12", gpa: 3.05 },
+        { id: "学生13", gpa: 2.12 },
+        { id: "学生14", gpa: 3.54 },
+        { id: "学生15", gpa: 2.69 },
+        { id: "学生16", gpa: 3.21 },
+        { id: "学生17", gpa: 1.58 },
+        { id: "学生18", gpa: 3.97 },
+        { id: "学生19", gpa: 2.44 },
+        { id: "学生20", gpa: 3.14 }
+      ];
+
+      const state = {
+        groupCount: 4,
+        mode: "gpa",
+        relation: "same",
+        constraints: [
+          { id: "c1", a: "学生01", b: "学生02", type: "separate" },
+          { id: "c2", a: "学生03", b: "学生04", type: "same" },
+          { id: "c3", a: "学生05", b: "学生06", type: "separate" }
+        ],
+        nextConstraintNumber: 4,
+        highlightedConstraints: new Set(),
+        notice: {
+          type: "info",
+          text: "サンプルデータとプリセット制約を読み込みました。"
+        },
+        result: null
+      };
+
+      const el = {
+        groupCountButtons: document.querySelector("#groupCountButtons"),
+        modeButtons: document.querySelector("#modeButtons"),
+        relationButtons: document.querySelector("#relationButtons"),
+        studentA: document.querySelector("#studentA"),
+        studentB: document.querySelector("#studentB"),
+        addConstraintButton: document.querySelector("#addConstraintButton"),
+        runButton: document.querySelector("#runButton"),
+        rerollButton: document.querySelector("#rerollButton"),
+        notice: document.querySelector("#notice"),
+        constraintList: document.querySelector("#constraintList"),
+        constraintCount: document.querySelector("#constraintCount"),
+        summaryGroupCount: document.querySelector("#summaryGroupCount"),
+        summaryConstraintCount: document.querySelector("#summaryConstraintCount"),
+        groupsGrid: document.querySelector("#groupsGrid"),
+        resultStatusBadge: document.querySelector("#resultStatusBadge"),
+        metricMode: document.querySelector("#metricMode"),
+        metricGroups: document.querySelector("#metricGroups"),
+        metricDiff: document.querySelector("#metricDiff"),
+        rosterGrid: document.querySelector("#rosterGrid")
+      };
+
+      function init() {
+        fillStudentSelects();
+        renderRoster();
+        bindEvents();
+        render();
+      }
+
+      function bindEvents() {
+        el.groupCountButtons.addEventListener("click", function (event) {
+          const button = event.target.closest("button[data-group-count]");
+          if (!button) return;
+          state.groupCount = Number(button.dataset.groupCount);
+          clearResultAfterSettingChange();
+          render();
+        });
+
+        el.modeButtons.addEventListener("click", function (event) {
+          const button = event.target.closest("button[data-mode]");
+          if (!button) return;
+          state.mode = button.dataset.mode;
+          clearResultAfterSettingChange();
+          render();
+        });
+
+        el.relationButtons.addEventListener("click", function (event) {
+          const button = event.target.closest("button[data-relation]");
+          if (!button) return;
+          state.relation = button.dataset.relation;
+          render();
+        });
+
+        el.addConstraintButton.addEventListener("click", addConstraint);
+        el.runButton.addEventListener("click", runGrouping);
+        el.rerollButton.addEventListener("click", runGrouping);
+
+        el.constraintList.addEventListener("click", function (event) {
+          const button = event.target.closest("button[data-delete-id]");
+          if (!button) return;
+          state.constraints = state.constraints.filter(function (constraint) {
+            return constraint.id !== button.dataset.deleteId;
+          });
+          state.highlightedConstraints = new Set();
+          state.notice = { type: "info", text: "制約を削除しました。" };
+          state.result = null;
+          render();
+        });
+      }
+
+      function fillStudentSelects() {
+        const options = students
+          .map(function (student) {
+            return '<option value="' + escapeHtml(student.id) + '">' + escapeHtml(student.id) + "</option>";
+          })
+          .join("");
+        el.studentA.innerHTML = options;
+        el.studentB.innerHTML = options;
+        el.studentA.value = "学生01";
+        el.studentB.value = "学生02";
+      }
+
+      function render() {
+        renderButtonState();
+        renderNotice();
+        renderConstraints();
+        renderResult();
+        el.summaryGroupCount.textContent = state.groupCount + "班";
+        el.summaryConstraintCount.textContent = state.constraints.length + "件";
+        el.constraintCount.textContent = String(state.constraints.length);
+        el.metricMode.textContent = modeLabel(state.mode);
+        el.metricGroups.textContent = String(state.groupCount);
+      }
+
+      function renderButtonState() {
+        setActiveButtons(el.groupCountButtons, "groupCount", String(state.groupCount));
+        setActiveButtons(el.modeButtons, "mode", state.mode);
+        setActiveButtons(el.relationButtons, "relation", state.relation);
+      }
+
+      function setActiveButtons(container, dataName, activeValue) {
+        Array.prototype.forEach.call(container.querySelectorAll("button"), function (button) {
+          const isActive = button.dataset[dataName] === activeValue;
+          button.classList.toggle("is-active", isActive);
+          button.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+      }
+
+      function renderNotice() {
+        el.notice.textContent = state.notice.text;
+        el.notice.className = "notice " + state.notice.type + " is-visible";
+      }
+
+      function renderConstraints() {
+        if (state.constraints.length === 0) {
+          el.constraintList.innerHTML = '<div class="empty-result">制約なし</div>';
+          return;
+        }
+
+        el.constraintList.innerHTML = state.constraints
+          .map(function (constraint) {
+            const isError = state.highlightedConstraints.has(constraint.id);
+            const typeClass = constraint.type === "same" ? "same" : "separate";
+            return (
+              '<div class="constraint-item' +
+              (isError ? " is-error" : "") +
+              '">' +
+              '<div class="constraint-main">' +
+              '<span class="constraint-type ' +
+              typeClass +
+              '">' +
+              escapeHtml(relationLabel(constraint.type)) +
+              "</span>" +
+              '<span class="constraint-pair">' +
+              escapeHtml(constraint.a) +
+              " ・ " +
+              escapeHtml(constraint.b) +
+              "</span>" +
+              "</div>" +
+              '<button class="delete-button" type="button" data-delete-id="' +
+              escapeHtml(constraint.id) +
+              '">削除</button>' +
+              "</div>"
+            );
+          })
+          .join("");
+      }
+
+      function renderResult() {
+        if (!state.result) {
+          el.resultStatusBadge.textContent = "待機";
+          el.metricDiff.textContent = "--";
+          el.groupsGrid.innerHTML = '<div class="empty-result">未実行</div>';
+          return;
+        }
+
+        if (!state.result.ok) {
+          el.resultStatusBadge.textContent = "未成立";
+          el.metricDiff.textContent = "--";
+          el.groupsGrid.innerHTML =
+            '<div class="empty-result">' +
+            '<strong>この制約は満たせません</strong><br>' +
+            escapeHtml(state.result.message) +
+            "</div>";
+          return;
+        }
+
+        el.resultStatusBadge.textContent = "完了";
+        el.metricDiff.textContent = state.result.maxDiff.toFixed(2);
+        el.groupsGrid.innerHTML = state.result.groups
+          .map(function (group, index) {
+            return (
+              '<article class="group-card">' +
+              '<div class="group-title">' +
+              "<h3>" +
+              (index + 1) +
+              "班</h3>" +
+              '<span class="group-average">' +
+              group.average.toFixed(2) +
+              "</span>" +
+              "</div>" +
+              '<div class="member-list">' +
+              group.members
+                .map(function (member) {
+                  return (
+                    '<div class="member">' +
+                    '<span class="member-name">' +
+                    escapeHtml(member.id) +
+                    "</span>" +
+                    '<span class="member-gpa">' +
+                    member.gpa.toFixed(2) +
+                    "</span>" +
+                    "</div>"
+                  );
+                })
+                .join("") +
+              "</div>" +
+              "</article>"
+            );
+          })
+          .join("");
+      }
+
+      function renderRoster() {
+        el.rosterGrid.innerHTML = students
+          .map(function (student) {
+            return (
+              '<div class="roster-item"><span>' +
+              escapeHtml(student.id) +
+              "</span><span>" +
+              student.gpa.toFixed(2) +
+              "</span></div>"
+            );
+          })
+          .join("");
+      }
+
+      function addConstraint() {
+        const a = el.studentA.value;
+        const b = el.studentB.value;
+        const type = state.relation;
+        const pair = pairKey(a, b);
+
+        if (a === b) {
+          state.notice = { type: "error", text: "同じ学生同士の制約は追加できません。" };
+          state.highlightedConstraints = new Set();
+          render();
+          return;
+        }
+
+        const duplicate = state.constraints.find(function (constraint) {
+          return pairKey(constraint.a, constraint.b) === pair && constraint.type === type;
+        });
+
+        if (duplicate) {
+          state.notice = { type: "info", text: "同じ制約は登録済みです。" };
+          state.highlightedConstraints = new Set([duplicate.id]);
+          render();
+          return;
+        }
+
+        const contradiction = state.constraints.find(function (constraint) {
+          return pairKey(constraint.a, constraint.b) === pair && constraint.type !== type;
+        });
+
+        if (contradiction) {
+          state.notice = {
+            type: "error",
+            text: "矛盾する制約です。同じ2名に対して「同じ班」と「別の班」は同時に指定できません。"
+          };
+          state.highlightedConstraints = new Set([contradiction.id]);
+          state.result = null;
+          render();
+          return;
+        }
+
+        state.constraints.push({
+          id: "c" + state.nextConstraintNumber,
+          a: a,
+          b: b,
+          type: type
+        });
+        state.nextConstraintNumber += 1;
+        state.notice = { type: "success", text: "制約を追加しました。" };
+        state.highlightedConstraints = new Set();
+        state.result = null;
+        render();
+      }
+
+      function runGrouping() {
+        const solution = solve();
+        state.result = solution;
+        state.highlightedConstraints = new Set(solution.causeIds || []);
+
+        if (solution.ok) {
+          state.notice = {
+            type: "success",
+            text: "グループ分けが完了しました。GPA平均の最大差は " + solution.maxDiff.toFixed(2) + " です。"
+          };
+        } else {
+          state.notice = {
+            type: "error",
+            text: "この制約は満たせません。赤く表示した制約を見直してください。"
+          };
+        }
+
+        render();
+      }
+
+      function solve() {
+        const model = buildConstraintModel();
+        if (!model.ok) {
+          return {
+            ok: false,
+            causeIds: model.causeIds,
+            message: model.message
+          };
+        }
+
+        if (model.units.length < state.groupCount) {
+          return {
+            ok: false,
+            causeIds: state.constraints
+              .filter(function (constraint) {
+                return constraint.type === "same";
+              })
+              .map(function (constraint) {
+                return constraint.id;
+              }),
+            message: "同じ班に結合されたまとまりが多く、指定した班数すべてに学生を配置できません。"
+          };
+        }
+
+        const cliqueCause = findCliqueCause(model);
+        if (cliqueCause.length > 0) {
+          return {
+            ok: false,
+            causeIds: cliqueCause,
+            message: "班数より多いまとまりが、互いに別の班として指定されています。"
+          };
+        }
+
+        const attempts = state.mode === "gpa" ? 1800 : 1200;
+        const blockerCounts = new Map();
+
+        for (let attempt = 0; attempt < attempts; attempt += 1) {
+          const assignment = greedyAssign(model, blockerCounts);
+          if (!assignment) continue;
+          let groups = buildGroupsFromAssignment(assignment, model);
+
+          if (groups.some(function (group) { return group.size === 0; })) {
+            continue;
+          }
+
+          if (!verifyGroups(groups, model)) {
+            continue;
+          }
+
+          if (state.mode === "gpa") {
+            groups = improveGpa(groups, model);
+          }
+
+          const finalized = finalizeGroups(groups);
+          return {
+            ok: true,
+            groups: finalized.groups,
+            maxDiff: finalized.maxDiff,
+            causeIds: []
+          };
+        }
+
+        const causeIds = Array.from(blockerCounts.entries())
+          .sort(function (a, b) {
+            return b[1] - a[1];
+          })
+          .slice(0, 8)
+          .map(function (entry) {
+            return entry[0];
+          });
+
+        return {
+          ok: false,
+          causeIds: causeIds.length > 0 ? causeIds : state.constraints.map(function (constraint) { return constraint.id; }),
+          message: "規定回数のリトライで、すべての制約を満たす組み合わせが見つかりませんでした。"
+        };
+      }
+
+      function buildConstraintModel() {
+        const dsu = createDisjointSet(students.map(function (student) { return student.id; }));
+
+        state.constraints.forEach(function (constraint) {
+          if (constraint.type === "same") {
+            dsu.union(constraint.a, constraint.b);
+          }
+        });
+
+        const components = new Map();
+        students.forEach(function (student) {
+          const root = dsu.find(student.id);
+          if (!components.has(root)) {
+            components.set(root, { students: [], sum: 0, size: 0 });
+          }
+          const component = components.get(root);
+          component.students.push(student);
+          component.sum += student.gpa;
+          component.size += 1;
+        });
+
+        const units = Array.from(components.values()).map(function (component, index) {
+          component.students.sort(compareStudentId);
+          return {
+            index: index,
+            students: component.students,
+            sum: component.sum,
+            size: component.size,
+            average: component.sum / component.size
+          };
+        });
+
+        const studentToUnit = new Map();
+        units.forEach(function (unit) {
+          unit.students.forEach(function (student) {
+            studentToUnit.set(student.id, unit.index);
+          });
+        });
+
+        const adjacency = units.map(function () {
+          return new Set();
+        });
+        const edgeConstraints = new Map();
+        const immediateCauses = new Set();
+
+        state.constraints.forEach(function (constraint) {
+          if (constraint.type !== "separate") return;
+          const left = studentToUnit.get(constraint.a);
+          const right = studentToUnit.get(constraint.b);
+
+          if (left === right) {
+            immediateCauses.add(constraint.id);
+            state.constraints.forEach(function (sameConstraint) {
+              if (
+                sameConstraint.type === "same" &&
+                studentToUnit.get(sameConstraint.a) === left &&
+                studentToUnit.get(sameConstraint.b) === left
+              ) {
+                immediateCauses.add(sameConstraint.id);
+              }
+            });
+            return;
+          }
+
+          adjacency[left].add(right);
+          adjacency[right].add(left);
+          const key = unitPairKey(left, right);
+          if (!edgeConstraints.has(key)) edgeConstraints.set(key, []);
+          edgeConstraints.get(key).push(constraint.id);
+        });
+
+        if (immediateCauses.size > 0) {
+          return {
+            ok: false,
+            causeIds: Array.from(immediateCauses),
+            message: "同じ班として結合された学生同士に、別の班の制約があります。"
+          };
+        }
+
+        const totalGpa = students.reduce(function (sum, student) {
+          return sum + student.gpa;
+        }, 0);
+
+        return {
+          ok: true,
+          units: units,
+          adjacency: adjacency,
+          edgeConstraints: edgeConstraints,
+          globalAverage: totalGpa / students.length
+        };
+      }
+
+      function greedyAssign(model, blockerCounts) {
+        const assignment = new Array(model.units.length).fill(-1);
+        const order = buildUnitOrder(model);
+        let groups = makeEmptyGroups();
+
+        for (let position = 0; position < order.length; position += 1) {
+          const unit = order[position];
+          const available = [];
+          const blockers = [];
+
+          for (let groupIndex = 0; groupIndex < state.groupCount; groupIndex += 1) {
+            const conflicts = groups[groupIndex].unitIndexes.filter(function (placedUnitIndex) {
+              return model.adjacency[unit.index].has(placedUnitIndex);
+            });
+
+            if (conflicts.length === 0) {
+              available.push(groupIndex);
+            } else {
+              conflicts.forEach(function (conflictIndex) {
+                const constraintIds = model.edgeConstraints.get(unitPairKey(unit.index, conflictIndex)) || [];
+                constraintIds.forEach(function (id) {
+                  blockers.push(id);
+                });
+              });
+            }
+          }
+
+          if (available.length === 0) {
+            blockers.forEach(function (id) {
+              blockerCounts.set(id, (blockerCounts.get(id) || 0) + 1);
+            });
+            return null;
+          }
+
+          const chosenGroup = chooseGroup(available, groups, unit, model, position, order.length);
+          assignment[unit.index] = chosenGroup;
+          groups = placeUnit(groups, chosenGroup, unit);
+        }
+
+        return assignment;
+      }
+
+      function buildUnitOrder(model) {
+        const copied = shuffle(model.units.slice());
+
+        copied.sort(function (a, b) {
+          const degreeDiff = model.adjacency[b.index].size - model.adjacency[a.index].size;
+          if (degreeDiff !== 0) return degreeDiff;
+
+          if (state.mode === "gpa") {
+            const aDistance = Math.abs(a.average - model.globalAverage);
+            const bDistance = Math.abs(b.average - model.globalAverage);
+            if (bDistance !== aDistance) return bDistance - aDistance;
+          }
+
+          if (b.size !== a.size) return b.size - a.size;
+          return Math.random() - 0.5;
+        });
+
+        return copied;
+      }
+
+      function chooseGroup(available, groups, unit, model, position, orderLength) {
+        const emptyAvailable = available.filter(function (groupIndex) {
+          return groups[groupIndex].size === 0;
+        });
+        const emptyCount = groups.filter(function (group) {
+          return group.size === 0;
+        }).length;
+        const remainingIncludingCurrent = orderLength - position;
+
+        if (emptyAvailable.length > 0 && remainingIncludingCurrent <= emptyCount) {
+          return randomItem(emptyAvailable);
+        }
+
+        if (state.mode === "random") {
+          const targetMax = Math.ceil(students.length / state.groupCount);
+          let candidates = available.filter(function (groupIndex) {
+            return groups[groupIndex].size + unit.size <= targetMax;
+          });
+          if (candidates.length === 0) candidates = available.slice();
+
+          const minSize = Math.min.apply(null, candidates.map(function (groupIndex) {
+            return groups[groupIndex].size;
+          }));
+          const lightGroups = candidates.filter(function (groupIndex) {
+            return groups[groupIndex].size <= minSize + 1;
+          });
+          return randomItem(lightGroups);
+        }
+
+        const scored = available.map(function (groupIndex) {
+          return {
+            groupIndex: groupIndex,
+            score: scorePlacement(groups, groupIndex, unit, model) + Math.random() * 0.0005
+          };
+        });
+        const bestScore = Math.min.apply(null, scored.map(function (item) {
+          return item.score;
+        }));
+        const best = scored.filter(function (item) {
+          return item.score <= bestScore + 0.0001;
+        });
+
+        return randomItem(best).groupIndex;
+      }
+
+      function scorePlacement(groups, groupIndex, unit, model) {
+        const simulated = groups.map(function (group, index) {
+          return {
+            size: group.size + (index === groupIndex ? unit.size : 0),
+            sum: group.sum + (index === groupIndex ? unit.sum : 0)
+          };
+        });
+        const averages = simulated.map(function (group) {
+          return group.size > 0 ? group.sum / group.size : model.globalAverage;
+        });
+        const maxAverage = Math.max.apply(null, averages);
+        const minAverage = Math.min.apply(null, averages);
+        const sizes = simulated.map(function (group) { return group.size; });
+        const sizeSpread = Math.max.apply(null, sizes) - Math.min.apply(null, sizes);
+        const targetMax = Math.ceil(students.length / state.groupCount);
+        const overflow = simulated.reduce(function (sum, group) {
+          return sum + Math.max(0, group.size - targetMax);
+        }, 0);
+
+        return (maxAverage - minAverage) + sizeSpread * 0.035 + overflow * 0.25;
+      }
+
+      function improveGpa(groups, model) {
+        let assignment = groupsToAssignment(groups, model.units.length);
+        let bestScore = scoreAssignment(assignment, model);
+
+        for (let pass = 0; pass < 70; pass += 1) {
+          let bestMove = null;
+
+          for (let unitIndex = 0; unitIndex < model.units.length; unitIndex += 1) {
+            const fromGroup = assignment[unitIndex];
+            for (let toGroup = 0; toGroup < state.groupCount; toGroup += 1) {
+              if (fromGroup === toGroup) continue;
+              if (!canMoveUnit(unitIndex, toGroup, assignment, model, null)) continue;
+
+              assignment[unitIndex] = toGroup;
+              const score = scoreAssignment(assignment, model);
+              assignment[unitIndex] = fromGroup;
+
+              if (score + 0.0001 < bestScore) {
+                bestScore = score;
+                bestMove = { kind: "move", unitIndex: unitIndex, toGroup: toGroup };
+              }
+            }
+          }
+
+          for (let a = 0; a < model.units.length; a += 1) {
+            for (let b = a + 1; b < model.units.length; b += 1) {
+              const groupA = assignment[a];
+              const groupB = assignment[b];
+              if (groupA === groupB) continue;
+              if (!canMoveUnit(a, groupB, assignment, model, b)) continue;
+              if (!canMoveUnit(b, groupA, assignment, model, a)) continue;
+
+              assignment[a] = groupB;
+              assignment[b] = groupA;
+              const score = scoreAssignment(assignment, model);
+              assignment[a] = groupA;
+              assignment[b] = groupB;
+
+              if (score + 0.0001 < bestScore) {
+                bestScore = score;
+                bestMove = { kind: "swap", a: a, b: b };
+              }
+            }
+          }
+
+          if (!bestMove) break;
+
+          if (bestMove.kind === "move") {
+            assignment[bestMove.unitIndex] = bestMove.toGroup;
+          } else {
+            const oldGroup = assignment[bestMove.a];
+            assignment[bestMove.a] = assignment[bestMove.b];
+            assignment[bestMove.b] = oldGroup;
+          }
+        }
+
+        return buildGroupsFromAssignment(assignment, model);
+      }
+
+      function canMoveUnit(unitIndex, targetGroup, assignment, model, ignoreUnitIndex) {
+        const originalGroup = assignment[unitIndex];
+        const sourceHasOtherUnits = assignment.some(function (groupIndex, otherUnitIndex) {
+          return otherUnitIndex !== unitIndex && groupIndex === originalGroup;
+        });
+
+        if (!sourceHasOtherUnits) return false;
+
+        for (let other = 0; other < assignment.length; other += 1) {
+          if (other === unitIndex || other === ignoreUnitIndex) continue;
+          if (assignment[other] === targetGroup && model.adjacency[unitIndex].has(other)) {
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      function scoreAssignment(assignment, model) {
+        const groups = buildGroupsFromAssignment(assignment, model);
+        const finalized = finalizeGroups(groups);
+        const sizes = finalized.groups.map(function (group) { return group.size; });
+        const sizeSpread = Math.max.apply(null, sizes) - Math.min.apply(null, sizes);
+        const emptyPenalty = finalized.groups.filter(function (group) {
+          return group.size === 0;
+        }).length * 10;
+
+        return finalized.maxDiff + sizeSpread * 0.02 + emptyPenalty;
+      }
+
+      function verifyGroups(groups, model) {
+        const assignment = groupsToAssignment(groups, model.units.length);
+        for (let unitIndex = 0; unitIndex < model.units.length; unitIndex += 1) {
+          const groupIndex = assignment[unitIndex];
+          for (const neighborIndex of model.adjacency[unitIndex]) {
+            if (assignment[neighborIndex] === groupIndex) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+
+      function makeEmptyGroups() {
+        return Array.from({ length: state.groupCount }, function (_, index) {
+          return { label: index + 1, unitIndexes: [], members: [], sum: 0, size: 0 };
+        });
+      }
+
+      function placeUnit(groups, groupIndex, unit) {
+        const next = groups.map(function (group) {
+          return {
+            label: group.label,
+            unitIndexes: group.unitIndexes.slice(),
+            members: group.members.slice(),
+            sum: group.sum,
+            size: group.size
+          };
+        });
+        next[groupIndex].unitIndexes.push(unit.index);
+        next[groupIndex].members = next[groupIndex].members.concat(unit.students);
+        next[groupIndex].sum += unit.sum;
+        next[groupIndex].size += unit.size;
+        return next;
+      }
+
+      function buildGroupsFromAssignment(assignment, model) {
+        let groups = makeEmptyGroups();
+        model.units.forEach(function (unit) {
+          groups = placeUnit(groups, assignment[unit.index], unit);
+        });
+        return groups;
+      }
+
+      function groupsToAssignment(groups, unitCount) {
+        const assignment = new Array(unitCount).fill(-1);
+        groups.forEach(function (group, groupIndex) {
+          group.unitIndexes.forEach(function (unitIndex) {
+            assignment[unitIndex] = groupIndex;
+          });
+        });
+        return assignment;
+      }
+
+      function finalizeGroups(groups) {
+        const finalizedGroups = groups.map(function (group) {
+          const members = group.members.slice().sort(compareStudentId);
+          return {
+            members: members,
+            size: members.length,
+            sum: group.sum,
+            average: members.length > 0 ? group.sum / members.length : 0
+          };
+        });
+
+        const averages = finalizedGroups.map(function (group) {
+          return group.average;
+        });
+        const maxDiff = Math.max.apply(null, averages) - Math.min.apply(null, averages);
+
+        return {
+          groups: finalizedGroups,
+          maxDiff: maxDiff
+        };
+      }
+
+      function findCliqueCause(model) {
+        const need = state.groupCount + 1;
+        if (model.units.length < need) return [];
+
+        const vertices = model.units
+          .map(function (unit) { return unit.index; })
+          .sort(function (a, b) {
+            return model.adjacency[b].size - model.adjacency[a].size;
+          });
+
+        const clique = expandClique([], vertices, need, model.adjacency);
+        if (!clique) return [];
+
+        const causeIds = new Set();
+        for (let i = 0; i < clique.length; i += 1) {
+          for (let j = i + 1; j < clique.length; j += 1) {
+            const ids = model.edgeConstraints.get(unitPairKey(clique[i], clique[j])) || [];
+            ids.forEach(function (id) {
+              causeIds.add(id);
+            });
+          }
+        }
+
+        return Array.from(causeIds);
+      }
+
+      function expandClique(clique, candidates, need, adjacency) {
+        if (clique.length === need) return clique;
+        if (clique.length + candidates.length < need) return null;
+
+        for (let i = 0; i < candidates.length; i += 1) {
+          const vertex = candidates[i];
+          const nextCandidates = candidates.slice(i + 1).filter(function (candidate) {
+            return adjacency[vertex].has(candidate);
+          });
+          const found = expandClique(clique.concat(vertex), nextCandidates, need, adjacency);
+          if (found) return found;
+        }
+
+        return null;
+      }
+
+      function createDisjointSet(ids) {
+        const parent = new Map();
+        ids.forEach(function (id) {
+          parent.set(id, id);
+        });
+
+        function find(id) {
+          const current = parent.get(id);
+          if (current === id) return id;
+          const root = find(current);
+          parent.set(id, root);
+          return root;
+        }
+
+        function union(a, b) {
+          const rootA = find(a);
+          const rootB = find(b);
+          if (rootA !== rootB) parent.set(rootB, rootA);
+        }
+
+        return { find: find, union: union };
+      }
+
+      function clearResultAfterSettingChange() {
+        state.result = null;
+        state.highlightedConstraints = new Set();
+        state.notice = { type: "info", text: "設定を変更しました。" };
+      }
+
+      function modeLabel(mode) {
+        return mode === "random" ? "完全ランダム" : "GPA均等化";
+      }
+
+      function relationLabel(type) {
+        return type === "same" ? "同じ班" : "別の班";
+      }
+
+      function pairKey(a, b) {
+        return [a, b].sort().join("|");
+      }
+
+      function unitPairKey(a, b) {
+        return a < b ? a + "|" + b : b + "|" + a;
+      }
+
+      function compareStudentId(a, b) {
+        return Number(a.id.replace("学生", "")) - Number(b.id.replace("学生", ""));
+      }
+
+      function shuffle(items) {
+        for (let i = items.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          const temp = items[i];
+          items[i] = items[j];
+          items[j] = temp;
+        }
+        return items;
+      }
+
+      function randomItem(items) {
+        return items[Math.floor(Math.random() * items.length)];
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      init();
+    </script>
   </body>
 </html>
